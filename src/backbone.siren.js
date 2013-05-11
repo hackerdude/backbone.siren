@@ -5,7 +5,6 @@ Backbone.Siren = (function (_, Backbone, undefined) {
     var _store = {}
     , _pending = {}
 
-
     /**
      * Super simple store.  Good enough for now.
      *
@@ -544,21 +543,46 @@ Backbone.Siren = (function (_, Backbone, undefined) {
         /**
          * Creates a Backbone.Siren model, collection, or error from a Siren object
          *
+         * This version uses a registry on Backbone.Siren.class_registry that lets
+         * you specify what storage classes you want to use to fill in the entity.
+         *
+         * For example, if you have a class that contains ['model', 'movie'],
+         * You can add 'model_movie' to the registry with a class that follows the
+         * Backbone.Siren.Model prototype.
+         *
          * @param {Object} entity
          * @returns {Backbone.Siren.Model|Backbone.Siren.Collection|Backbone.Siren.Error}
          */
         , parse: function (entity) {
-            var bbSiren;
-
-            if (_hasClass(entity, 'collection')) {
-                bbSiren = new Backbone.Siren.Collection(entity);
-            } else if (_hasClass(entity, 'error')) {
-                // @todo how should we represent errors?
-                warn('@todo - errors');
-            } else {
-                bbSiren = new Backbone.Siren.Model(entity);
+            // TODO Needs Cleanup - building the registry on first hit. But there's
+            // all sorts of JS dependency stuff that won't let me build it statically.
+            if ( ! Backbone.Siren.class_registry ) {
+              Backbone.Siren.class_registry = {};
             }
-
+            if ( ! Backbone.Siren.class_registry.model ) {
+              Backbone.Siren.class_registry.model = Backbone.Siren.Model;
+              Backbone.Siren.class_registry.collection = Backbone.Siren.Collection;
+              Backbone.Siren.class_registry.error =  Backbone.Siren.Model;
+            }
+            // TODO really a const. These are the 'core' classes that Backbone.siren knows about
+            var CORE_CLASSES = ['collection', 'model', 'error'];
+            var bbSiren, core_class, noncore_classes, obj_class, target_class, classNames;
+            classNames = getClassNames(entity);
+            if (classNames.length === 0) { classNames = ['error']; }
+            noncore_classes = _.difference(classNames, CORE_CLASSES).sort();
+            core_class     = _.first(_.difference(classNames, noncore_classes));
+            if (core_class) {
+              obj_class      = [core_class].concat(noncore_classes);
+            } else {
+              // No core class specified (model, collection, etc).
+              obj_class      = noncore_classes;
+            }
+            // Try to find a corresponding class. They start with either "model"
+            // or "collection" or 'error' and then they have the rest of their
+            // names alpha sorted after a dot (usually there's only two names though)
+            target_class = Backbone.Siren.class_registry[obj_class.join('_')];
+            if ( ! target_class ) { target_class = Backbone.Siren.Model; } // To put the error
+            bbSiren = new target_class(entity);
             return bbSiren;
         }
 
@@ -934,9 +958,9 @@ Backbone.Siren = (function (_, Backbone, undefined) {
             , constructor: function (sirenObj, options) {
                 options = options || {};
                 options.parse = true; // Force "parse" to be called on instantiation: http://stackoverflow.com/questions/11068989/backbone-js-using-parse-without-calling-fetch/14950519#14950519
-
                 Backbone.Collection.call(this, sirenObj, options);
             }
         })
+
     };
 }(_, Backbone));
