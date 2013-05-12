@@ -556,6 +556,7 @@ Backbone.Siren = (function (_, Backbone, undefined) {
         , parse: function (entity) {
             // TODO Needs Cleanup - building the registry on first hit. But there's
             // all sorts of JS dependency stuff that won't let me build it statically.
+          //
             if ( ! Backbone.Siren.class_registry ) {
               Backbone.Siren.class_registry = {};
             }
@@ -566,7 +567,7 @@ Backbone.Siren = (function (_, Backbone, undefined) {
             }
             // TODO really a const. These are the 'core' classes that Backbone.siren knows about
             var CORE_CLASSES = ['collection', 'model', 'error'];
-            var bbSiren, core_class, noncore_classes, obj_class, target_class, classNames, class_name;
+            var bbSiren, core_class, noncore_classes, obj_class, Target_class, classNames, class_name;
             classNames = getClassNames(entity);
             if (classNames.length === 0) { classNames = ['error']; }
             noncore_classes = _.difference(classNames, CORE_CLASSES).sort();
@@ -581,12 +582,12 @@ Backbone.Siren = (function (_, Backbone, undefined) {
             // or "collection" or 'error' and then they have the rest of their
             // names alpha sorted after a dot (usually there's only two names though)
             class_name   = obj_class.join('_');
-            target_class = Backbone.Siren.class_registry[class_name];
-            if ( ! target_class ) {
+            Target_class = Backbone.Siren.class_registry[class_name];
+            if ( ! Target_class ) {
                warn('Could not find target class '+class_name+' in registry, using Backbone.Siren.Model');
-              target_class = Backbone.Siren.Model;
+              Target_class = Backbone.Siren.Model;
             } // To put the error
-            bbSiren = new target_class(entity);
+            bbSiren = new Target_class(entity);
             return bbSiren;
         }
 
