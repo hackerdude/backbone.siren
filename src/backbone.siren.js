@@ -566,7 +566,7 @@ Backbone.Siren = (function (_, Backbone, undefined) {
             }
             // TODO really a const. These are the 'core' classes that Backbone.siren knows about
             var CORE_CLASSES = ['collection', 'model', 'error'];
-            var bbSiren, core_class, noncore_classes, obj_class, target_class, classNames;
+            var bbSiren, core_class, noncore_classes, obj_class, target_class, classNames, class_name;
             classNames = getClassNames(entity);
             if (classNames.length === 0) { classNames = ['error']; }
             noncore_classes = _.difference(classNames, CORE_CLASSES).sort();
@@ -580,8 +580,12 @@ Backbone.Siren = (function (_, Backbone, undefined) {
             // Try to find a corresponding class. They start with either "model"
             // or "collection" or 'error' and then they have the rest of their
             // names alpha sorted after a dot (usually there's only two names though)
-            target_class = Backbone.Siren.class_registry[obj_class.join('_')];
-            if ( ! target_class ) { target_class = Backbone.Siren.Model; } // To put the error
+            class_name   = obj_class.join('_');
+            target_class = Backbone.Siren.class_registry[class_name];
+            if ( ! target_class ) {
+               warn('Could not find target class '+class_name+' in registry, using Backbone.Siren.Model');
+              target_class = Backbone.Siren.Model;
+            } // To put the error
             bbSiren = new target_class(entity);
             return bbSiren;
         }
